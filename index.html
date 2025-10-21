@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Descargador de Repositorios GitHub</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         :root {
             --primary-color: #2ea44f;
@@ -110,14 +109,36 @@
             gap: 15px;
         }
         
-        .download-all-btn {
-            background: #ff6b6b;
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .download-btn {
+            background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 25px;
+            padding: 12px 20px;
             border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn.info {
+            background: #6c757d;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .download-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .stats-grid {
@@ -155,16 +176,39 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .repository-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .repo-info {
             flex: 1;
         }
         
+        .repo-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
         .repo-name {
             font-weight: 700;
             font-size: 1.2em;
-            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+        
+        .repo-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        
+        .repo-link:hover {
+            text-decoration: underline;
         }
         
         .repo-description {
@@ -186,14 +230,25 @@
             color: #586069;
         }
         
-        .download-btn {
+        .repo-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .repo-download-btn {
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .repo-download-btn:hover {
+            background: #22863a;
+            transform: translateY(-1px);
         }
         
         .loading {
@@ -234,6 +289,31 @@
             margin-top: 20px;
         }
         
+        .progress-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 25px;
+            display: none;
+        }
+        
+        .progress-bar-container {
+            height: 12px;
+            background: var(--secondary-color);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
         @media (max-width: 768px) {
             .input-section {
                 flex-direction: column;
@@ -244,10 +324,18 @@
                 align-items: stretch;
             }
             
+            .download-buttons {
+                flex-direction: column;
+            }
+            
             .repository-item {
                 flex-direction: column;
                 align-items: stretch;
                 gap: 15px;
+            }
+            
+            .repo-actions {
+                justify-content: center;
             }
         }
     </style>
@@ -255,7 +343,7 @@
 <body>
     <div class="header">
         <h1>🚀 Descargador de Repositorios GitHub</h1>
-        <p class="subtitle">Descarga todos los repositorios de cualquier usuario de GitHub</p>
+        <p class="subtitle">Descarga repositorios individualmente o toda la información en un archivo</p>
     </div>
     
     <div class="card">
@@ -265,10 +353,10 @@
         </div>
         
         <div class="info-box">
-            <div><strong>¿Cómo funciona?</strong></div>
-            <p>1. Ingresa el nombre de usuario de GitHub</p>
-            <p>2. La aplicación buscará todos sus repositorios públicos</p>
-            <p>3. Podrás descargar repositorios individualmente</p>
+            <div><strong>💡 ¿Cómo funciona?</strong></div>
+            <p>• <strong>Descarga Individual:</strong> Cada repositorio tiene su botón de descarga directa</p>
+            <p>• <strong>Información Completa:</strong> Descarga un archivo con todos los datos y enlaces</p>
+            <p>• <strong>Sin Ventanas Emergentes:</strong> Todo se descarga directamente en tu navegador</p>
         </div>
     </div>
     
@@ -283,9 +371,11 @@
         <div class="card">
             <div class="section-header">
                 <h2>📚 Repositorios Encontrados</h2>
-                <button class="download-all-btn" id="download-all">
-                    ⬇️ Descargar Todo en ZIP
-                </button>
+                <div class="download-buttons">
+                    <button class="download-btn info" id="download-info">
+                        📄 Descargar Info Completa
+                    </button>
+                </div>
             </div>
             
             <div class="stats-grid">
@@ -305,12 +395,20 @@
             
             <div id="repository-list" class="repository-list"></div>
             
+            <div class="progress-section" id="progress-section">
+                <div id="progress-text">Preparando descarga...</div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="progress-percent">0%</div>
+            </div>
+            
             <div id="success-message" class="success-message" style="display: none;"></div>
         </div>
     </div>
 
     <script>
-        // ✅ CONFIGURACIÓN ACTUALIZADA CON TU WORKER
+        // ✅ CONFIGURACIÓN CON TU WORKER
         const CLOUDFLARE_WORKER_URL = 'https://gitdown.jrgm0301.workers.dev';
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -320,7 +418,11 @@
             const errorElement = document.getElementById('error');
             const repositoriesSection = document.getElementById('repositories-section');
             const repositoryList = document.getElementById('repository-list');
-            const downloadAllBtn = document.getElementById('download-all');
+            const downloadInfoBtn = document.getElementById('download-info');
+            const progressSection = document.getElementById('progress-section');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressPercent = document.getElementById('progress-percent');
             const successMessage = document.getElementById('success-message');
             const totalReposElement = document.getElementById('total-repos');
             const totalSizeElement = document.getElementById('total-size');
@@ -333,7 +435,7 @@
             usernameInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') searchRepositories();
             });
-            downloadAllBtn.addEventListener('click', downloadAllRepositories);
+            downloadInfoBtn.addEventListener('click', downloadInfoFile);
             
             async function searchRepositories() {
                 const username = usernameInput.value.trim();
@@ -346,10 +448,10 @@
                 loadingElement.style.display = 'block';
                 errorElement.style.display = 'none';
                 repositoriesSection.style.display = 'none';
+                progressSection.style.display = 'none';
                 searchBtn.disabled = true;
                 
                 try {
-                    // ✅ USANDO TU WORKER ACTUAL
                     const response = await fetch(`${CLOUDFLARE_WORKER_URL}/repos?username=${username}`);
                     
                     if (!response.ok) {
@@ -388,14 +490,29 @@
                     const repoInfo = document.createElement('div');
                     repoInfo.className = 'repo-info';
                     
+                    // Header con nombre y link
+                    const repoHeader = document.createElement('div');
+                    repoHeader.className = 'repo-header';
+                    
                     const repoName = document.createElement('div');
                     repoName.className = 'repo-name';
                     repoName.textContent = repo.name;
                     
+                    const repoLink = document.createElement('a');
+                    repoLink.href = repo.html_url;
+                    repoLink.className = 'repo-link';
+                    repoLink.textContent = '🔗 Ver en GitHub';
+                    repoLink.target = '_blank';
+                    
+                    repoHeader.appendChild(repoName);
+                    repoHeader.appendChild(repoLink);
+                    
+                    // Descripción
                     const repoDescription = document.createElement('div');
                     repoDescription.className = 'repo-description';
                     repoDescription.textContent = repo.description || 'Sin descripción disponible';
                     
+                    // Metadata
                     const repoMeta = document.createElement('div');
                     repoMeta.className = 'repo-meta';
                     
@@ -407,49 +524,102 @@
                     forks.className = 'repo-tag';
                     forks.innerHTML = `🍴 ${repo.forks_count}`;
                     
+                    const size = document.createElement('span');
+                    size.className = 'repo-tag';
+                    size.innerHTML = `📦 ${formatSize(repo.size)}`;
+                    
                     const language = document.createElement('span');
                     language.className = 'repo-tag';
                     language.innerHTML = `</> ${repo.language || 'N/A'}`;
                     
                     repoMeta.appendChild(stars);
                     repoMeta.appendChild(forks);
+                    repoMeta.appendChild(size);
                     repoMeta.appendChild(language);
                     
-                    repoInfo.appendChild(repoName);
+                    repoInfo.appendChild(repoHeader);
                     repoInfo.appendChild(repoDescription);
                     repoInfo.appendChild(repoMeta);
                     
+                    // Botón de descarga individual
+                    const repoActions = document.createElement('div');
+                    repoActions.className = 'repo-actions';
+                    
                     const downloadBtn = document.createElement('button');
-                    downloadBtn.className = 'download-btn';
+                    downloadBtn.className = 'repo-download-btn';
                     downloadBtn.textContent = '⬇️ Descargar';
                     downloadBtn.onclick = () => downloadSingleRepository(repo);
                     
+                    repoActions.appendChild(downloadBtn);
+                    
                     repoItem.appendChild(repoInfo);
-                    repoItem.appendChild(downloadBtn);
+                    repoItem.appendChild(repoActions);
                     
                     repositoryList.appendChild(repoItem);
                 });
             }
             
             function downloadSingleRepository(repo) {
-                // Descarga directa usando el Worker
-                const downloadUrl = `${CLOUDFLARE_WORKER_URL}/download?repo=${repo.full_name}`;
-                window.open(downloadUrl, '_blank');
-                showTemporarySuccess(`Descargando: ${repo.name}`);
+                // Descarga directa usando el Worker - SIN VENTANA EMERGENTE
+                const downloadUrl = `${CLOUDFLARE_WORKER_URL}/download-single?repo=${repo.full_name}`;
+                
+                // Crear enlace invisible y hacer click
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showTemporarySuccess(`✅ Descargando: ${repo.name}`);
             }
             
-            async function downloadAllRepositories() {
+            async function downloadInfoFile() {
                 if (repositories.length === 0) return;
                 
-                // Para descarga masiva, abrimos cada repositorio en nueva pestaña
-                repositories.forEach((repo, index) => {
-                    setTimeout(() => {
-                        const downloadUrl = `${CLOUDFLARE_WORKER_URL}/download?repo=${repo.full_name}`;
-                        window.open(downloadUrl, `download-${index}`);
-                    }, index * 500); // Esperar 500ms entre cada descarga
-                });
+                downloadInfoBtn.disabled = true;
+                progressSection.style.display = 'block';
+                successMessage.style.display = 'none';
                 
-                showTemporarySuccess(`Iniciando descarga de ${repositories.length} repositorios`);
+                try {
+                    updateProgress(0, 'Generando archivo de información...');
+                    
+                    const username = usernameInput.value.trim();
+                    const response = await fetch(`${CLOUDFLARE_WORKER_URL}/download-info?username=${username}`);
+                    
+                    if (!response.ok) {
+                        throw new Error('Error al generar el archivo de información');
+                    }
+                    
+                    updateProgress(50, 'Descargando archivo...');
+                    
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `repositorios-${username}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    updateProgress(100, '¡Descarga completada!');
+                    showTemporarySuccess(`✅ Se ha descargado la información de ${repositories.length} repositorios`);
+                    
+                } catch (error) {
+                    showError('Error al descargar: ' + error.message);
+                } finally {
+                    downloadInfoBtn.disabled = false;
+                    setTimeout(() => {
+                        progressSection.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            function updateProgress(percent, text) {
+                progressBar.style.width = percent + '%';
+                progressText.textContent = text;
+                progressPercent.textContent = Math.round(percent) + '%';
             }
             
             function updateStats() {
@@ -461,6 +631,11 @@
                 
                 const totalStars = repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0);
                 totalStarsElement.textContent = totalStars.toLocaleString();
+            }
+            
+            function formatSize(kb) {
+                if (kb < 1024) return `${kb} KB`;
+                return `${(kb / 1024).toFixed(1)} MB`;
             }
             
             function showTemporarySuccess(message) {
@@ -475,6 +650,7 @@
                 errorElement.textContent = message;
                 errorElement.style.display = 'block';
                 loadingElement.style.display = 'none';
+                progressSection.style.display = 'none';
             }
         });
     </script>
