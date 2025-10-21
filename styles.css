@@ -124,7 +124,7 @@ header p {
     color: white;
 }
 
-#download-all-zip-btn {
+#generate-links-btn {
     background-color: #e67e22;
     color: white;
 }
@@ -230,12 +230,7 @@ header p {
     background-color: #219653;
 }
 
-.download-btn:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
-}
-
-#download-progress {
+#links-section {
     margin-top: 30px;
     padding: 20px;
     background-color: #f8f9fa;
@@ -243,33 +238,36 @@ header p {
     border: 1px solid #e9ecef;
 }
 
-#download-progress h3 {
+#links-section h3 {
     margin-bottom: 15px;
     color: #2c3e50;
-    text-align: center;
 }
 
-.progress-bar {
-    width: 100%;
-    height: 20px;
-    background-color: #ecf0f1;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 10px;
+.download-link-item {
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3498db, #2ecc71);
-    border-radius: 10px;
-    transition: width 0.3s ease;
-    width: 0%;
+.download-link-item a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
 }
 
-#progress-text {
-    text-align: center;
+.download-link-item a:hover {
+    text-decoration: underline;
+}
+
+.file-size {
     color: #7f8c8d;
-    font-size: 14px;
+    font-size: 12px;
+    font-style: italic;
 }
 
 .success-message {
@@ -280,6 +278,15 @@ header p {
     margin: 15px 0;
     border: 1px solid #c3e6cb;
     text-align: center;
+}
+
+.instructions {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+    border: 1px solid #ffeaa7;
 }
 
 footer {
@@ -315,5 +322,11 @@ footer {
     .actions {
         width: 100%;
         justify-content: space-between;
+    }
+    
+    .download-link-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
     }
 }
