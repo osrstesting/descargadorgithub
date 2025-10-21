@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Descargador Masivo de Repositorios GitHub</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -36,7 +34,7 @@
                     <button id="select-all-btn">Seleccionar Todos</button>
                     <button id="deselect-all-btn">Deseleccionar Todos</button>
                     <button id="download-selected-btn">Descargar Seleccionados</button>
-                    <button id="download-all-zip-btn">Descargar Todo en ZIP</button>
+                    <button id="generate-links-btn">Generar Enlaces de Descarga</button>
                 </div>
                 
                 <div class="stats">
@@ -45,18 +43,16 @@
                 
                 <div id="repos-list"></div>
                 
-                <div id="download-progress" class="hidden">
-                    <h3>Descargando repositorios...</h3>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                    <p id="progress-text">Preparando descarga...</p>
+                <div id="links-section" class="hidden">
+                    <h3>Enlaces de Descarga Directa</h3>
+                    <p>Haz clic en los siguientes enlaces para descargar cada repositorio:</p>
+                    <div id="download-links"></div>
                 </div>
             </div>
         </main>
         
         <footer>
-            <p>Esta herramienta utiliza la API pública de GitHub - Descarga masiva sin terminal</p>
+            <p>Esta herramienta utiliza la API pública de GitHub - Sin terminal requerido</p>
         </footer>
     </div>
     
