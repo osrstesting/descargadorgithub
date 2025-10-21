@@ -3,56 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Descargador Masivo de Repositorios GitHub</title>
+    <title>Descarga Masiva GitHub - ZIP Automático</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Descargador Masivo de Repositorios GitHub</h1>
-            <p>Ingresa un nombre de usuario de GitHub para descargar todos sus repositorios públicos</p>
+            <h1>🚀 Descarga Masiva de Repos GitHub</h1>
+            <p>Obtén todos los repositorios de cualquier usuario en un solo ZIP</p>
         </header>
         
         <main>
             <div class="input-section">
-                <input type="text" id="username" placeholder="Nombre de usuario de GitHub">
-                <button id="fetch-btn">Obtener Repositorios</button>
+                <input type="text" id="username" placeholder="usuario-de-github" value="torvalds">
+                <button id="generate-btn">Generar ZIP Automático</button>
             </div>
             
             <div id="loading" class="hidden">
-                <p>Cargando repositorios...</p>
+                <div class="spinner"></div>
+                <p>Creando tu archivo ZIP...</p>
+                <p class="info">Esto puede tomar 1-2 minutos</p>
+            </div>
+            
+            <div id="result" class="hidden">
+                <h3>✅ ¡ZIP Listo!</h3>
+                <p>Tu archivo se está generando automáticamente...</p>
+                <div id="download-info">
+                    <p><strong>Proceso:</strong></p>
+                    <ol>
+                        <li>Se creó un Release en este repositorio</li>
+                        <li>GitHub Actions está generando el ZIP</li>
+                        <li>En 1-2 minutos estarás listo para descargar</li>
+                    </ol>
+                    <button id="check-release-btn">Verificar Descarga</button>
+                </div>
             </div>
             
             <div id="error" class="hidden error">
                 <p id="error-message"></p>
             </div>
             
-            <div id="results" class="hidden">
-                <h2>Repositorios de <span id="user-display"></span></h2>
+            <div class="instructions">
+                <h3>¿Cómo funciona?</h3>
+                <ol>
+                    <li>Ingresa un usuario de GitHub</li>
+                    <li>Haz clic en "Generar ZIP Automático"</li>
+                    <li>Se creará un Release con todos los repos</li>
+                    <li>Descarga el ZIP desde la página de Releases</li>
+                </ol>
                 
-                <div class="bulk-actions">
-                    <button id="select-all-btn">Seleccionar Todos</button>
-                    <button id="deselect-all-btn">Deseleccionar Todos</button>
-                    <button id="download-selected-btn">Descargar Seleccionados</button>
-                    <button id="generate-links-btn">Generar Enlaces de Descarga</button>
-                </div>
-                
-                <div class="stats">
-                    <span id="selected-count">0</span> de <span id="total-count">0</span> repositorios seleccionados
-                </div>
-                
-                <div id="repos-list"></div>
-                
-                <div id="links-section" class="hidden">
-                    <h3>Enlaces de Descarga Directa</h3>
-                    <p>Haz clic en los siguientes enlaces para descargar cada repositorio:</p>
-                    <div id="download-links"></div>
+                <div class="featured-users">
+                    <h4>Ejemplos para probar:</h4>
+                    <button class="user-btn" data-user="torvalds">Linus Torvalds</button>
+                    <button class="user-btn" data-user="microsoft">Microsoft</button>
+                    <button class="user-btn" data-user="google">Google</button>
+                    <button class="user-btn" data-user="facebook">Facebook</button>
                 </div>
             </div>
         </main>
         
         <footer>
-            <p>Esta herramienta utiliza la API pública de GitHub - Sin terminal requerido</p>
+            <p>✨ Usa GitHub Actions para generar ZIPs automáticamente</p>
+            <p><a href="https://github.com/tu-usuario/tu-repositorio/releases" target="_blank">Ver Releases Generados</a></p>
         </footer>
     </div>
     
