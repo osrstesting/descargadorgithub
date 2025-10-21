@@ -10,12 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllBtn = document.getElementById('select-all-btn');
     const deselectAllBtn = document.getElementById('deselect-all-btn');
     const downloadSelectedBtn = document.getElementById('download-selected-btn');
-    const downloadAllZipBtn = document.getElementById('download-all-zip-btn');
+    const generateLinksBtn = document.getElementById('generate-links-btn');
     const selectedCountSpan = document.getElementById('selected-count');
     const totalCountSpan = document.getElementById('total-count');
-    const downloadProgress = document.getElementById('download-progress');
-    const progressFill = document.getElementById('progress-fill');
-    const progressText = document.getElementById('progress-text');
+    const linksSection = document.getElementById('links-section');
+    const downloadLinks = document.getElementById('download-links');
     
     let currentRepos = [];
     let selectedReposCount = 0;
@@ -24,8 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchBtn.addEventListener('click', fetchRepositories);
     selectAllBtn.addEventListener('click', selectAllRepos);
     deselectAllBtn.addEventListener('click', deselectAllRepos);
-    downloadSelectedBtn.addEventListener('click', downloadSelectedReposIndividual);
-    downloadAllZipBtn.addEventListener('click', downloadAllAsZip);
+    downloadSelectedBtn.addEventListener('click', downloadSelectedRepos);
+    generateLinksBtn.addEventListener('click', generateDownloadLinks);
     
     usernameInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
@@ -44,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Limpiar resultados anteriores
         hideError();
         hideResults();
+        hideLinksSection();
         showLoading();
         
         // Hacer la petición a la API de GitHub
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateButtonStates() {
         const hasSelectedRepos = selectedReposCount > 0;
         downloadSelectedBtn.disabled = !hasSelectedRepos;
-        downloadAllZipBtn.disabled = !hasSelectedRepos;
+        generateLinksBtn.disabled = !hasSelectedRepos;
     }
     
     function selectAllRepos() {
@@ -183,25 +183,30 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSelectedCount();
     }
     
-    function downloadSelectedReposIndividual() {
+    function downloadSelectedRepos() {
         const selectedRepos = getSelectedRepos();
         
         if (selectedRepos.length === 0) {
             showError('Por favor, selecciona al menos un repositorio');
             return;
+        }
+        
+        if (selectedRepos.length > 10) {
+            showInstructions(`Se abrirán ${selectedRepos.length} pestañas. Si tu navegador las bloquea, permite ventanas emergentes para este sitio.`);
         }
         
         // Abrir cada repositorio seleccionado en una nueva pestaña
-        selectedRepos.forEach(repo => {
-            const downloadUrl = `${repo.url}/archive/refs/heads/${repo.branch}.zip`;
-            window.open(downloadUrl, '_blank');
+        selectedRepos.forEach((repo, index) => {
+            setTimeout(() => {
+                const downloadUrl = `${repo.url}/archive/refs/heads/${repo.branch}.zip`;
+                window.open(downloadUrl, '_blank');
+            }, index * 500); // Espaciar las descargas para evitar bloqueos
         });
         
-        // Mostrar mensaje de éxito
-        showSuccessMessage(`Se abrieron ${selectedRepos.length} repositorios en pestañas nuevas`);
+        showSuccessMessage(`Iniciando descarga de ${selectedRepos.length} repositorios...`);
     }
     
-    async function downloadAllAsZip() {
+    function generateDownloadLinks() {
         const selectedRepos = getSelectedRepos();
         
         if (selectedRepos.length === 0) {
@@ -209,75 +214,33 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (selectedRepos.length > 20) {
-            if (!confirm(`Vas a descargar ${selectedRepos.length} repositorios. Esto puede tomar varios minutos. ¿Continuar?`)) {
-                return;
-            }
-        }
+        downloadLinks.innerHTML = '';
         
-        showDownloadProgress();
-        progressText.textContent = 'Iniciando descarga masiva...';
+        // Crear enlaces de descarga directa
+        selectedRepos.forEach(repo => {
+            const downloadUrl = `${repo.url}/archive/refs/heads/${repo.branch}.zip`;
+            
+            const linkItem = document.createElement('div');
+            linkItem.className = 'download-link-item';
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.textContent = `📦 ${repo.name}.zip`;
+            link.target = '_blank';
+            link.download = `${repo.name}.zip`;
+            
+            const fileInfo = document.createElement('span');
+            fileInfo.className = 'file-size';
+            fileInfo.textContent = 'Haz clic para descargar';
+            
+            linkItem.appendChild(link);
+            linkItem.appendChild(fileInfo);
+            
+            downloadLinks.appendChild(linkItem);
+        });
         
-        const zip = new JSZip();
-        const username = usernameInput.value.trim();
-        let completed = 0;
-        
-        // Función para descargar un repositorio
-        const downloadRepo = async (repo, index) => {
-            try {
-                progressText.textContent = `Descargando ${repo.name} (${index + 1}/${selectedRepos.length})...`;
-                
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`${repo.url}/archive/refs/heads/${repo.branch}.zip`)}`);
-                
-                if (!response.ok) {
-                    throw new Error(`Error al descargar ${repo.name}`);
-                }
-                
-                const data = await response.json();
-                
-                // Convertir base64 a blob
-                const binaryString = atob(data.contents);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                
-                // Agregar al ZIP
-                zip.file(`${repo.name}.zip`, bytes);
-                
-                completed++;
-                const progress = (completed / selectedRepos.length) * 100;
-                progressFill.style.width = `${progress}%`;
-                
-            } catch (error) {
-                console.error(`Error descargando ${repo.name}:`, error);
-                // Continuar con los siguientes repositorios
-                completed++;
-                const progress = (completed / selectedRepos.length) * 100;
-                progressFill.style.width = `${progress}%`;
-            }
-        };
-        
-        // Descargar todos los repositorios en paralelo con límite de concurrencia
-        const concurrencyLimit = 3;
-        for (let i = 0; i < selectedRepos.length; i += concurrencyLimit) {
-            const batch = selectedRepos.slice(i, i + concurrencyLimit);
-            await Promise.all(batch.map((repo, batchIndex) => downloadRepo(repo, i + batchIndex)));
-        }
-        
-        // Generar y descargar el ZIP final
-        progressText.textContent = 'Generando archivo ZIP...';
-        
-        zip.generateAsync({ type: 'blob' })
-            .then(function(content) {
-                saveAs(content, `${username}-repositories.zip`);
-                hideDownloadProgress();
-                showSuccessMessage(`¡Descarga completada! Se descargaron ${selectedRepos.length} repositorios en un archivo ZIP.`);
-            })
-            .catch(error => {
-                hideDownloadProgress();
-                showError('Error al generar el archivo ZIP: ' + error.message);
-            });
+        showLinksSection();
+        showSuccessMessage(`Se generaron ${selectedRepos.length} enlaces de descarga directa.`);
     }
     
     function getSelectedRepos() {
@@ -289,15 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 branch: checkbox.dataset.repoBranch
             };
         });
-    }
-    
-    function showDownloadProgress() {
-        downloadProgress.classList.remove('hidden');
-        progressFill.style.width = '0%';
-    }
-    
-    function hideDownloadProgress() {
-        downloadProgress.classList.add('hidden');
     }
     
     function showSuccessMessage(message) {
@@ -315,6 +269,23 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             successDiv.remove();
         }, 5000);
+    }
+    
+    function showInstructions(message) {
+        const existingInstructions = document.querySelector('.instructions');
+        if (existingInstructions) {
+            existingInstructions.remove();
+        }
+        
+        const instructionsDiv = document.createElement('div');
+        instructionsDiv.className = 'instructions';
+        instructionsDiv.textContent = message;
+        
+        resultsDiv.insertBefore(instructionsDiv, reposList);
+        
+        setTimeout(() => {
+            instructionsDiv.remove();
+        }, 8000);
     }
     
     function showLoading() {
@@ -342,5 +313,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function hideResults() {
         resultsDiv.classList.add('hidden');
+    }
+    
+    function showLinksSection() {
+        linksSection.classList.remove('hidden');
+    }
+    
+    function hideLinksSection() {
+        linksSection.classList.add('hidden');
     }
 });
