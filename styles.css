@@ -8,65 +8,76 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: #333;
-    background-color: #f5f5f5;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
     padding: 20px;
 }
 
 .container {
-    max-width: 900px;
+    max-width: 800px;
     margin: 0 auto;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 40px;
 }
 
 header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 header h1 {
     color: #2c3e50;
     margin-bottom: 10px;
+    font-size: 2.5em;
 }
 
 header p {
     color: #7f8c8d;
+    font-size: 1.2em;
 }
 
 .input-section {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 15px;
+    margin-bottom: 30px;
 }
 
 #username {
     flex: 1;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
     font-size: 16px;
+    transition: border-color 0.3s;
 }
 
-#fetch-btn {
-    padding: 12px 20px;
-    background-color: #3498db;
+#username:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+#generate-btn {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 16px;
-    transition: background-color 0.3s;
+    font-weight: bold;
+    transition: transform 0.2s;
 }
 
-#fetch-btn:hover {
-    background-color: #2980b9;
+#generate-btn:hover {
+    transform: translateY(-2px);
 }
 
-#fetch-btn:disabled {
-    background-color: #bdc3c7;
+#generate-btn:disabled {
+    background: #bdc3c7;
     cursor: not-allowed;
+    transform: none;
 }
 
 .hidden {
@@ -75,258 +86,150 @@ header p {
 
 #loading {
     text-align: center;
-    padding: 20px;
+    padding: 40px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.info {
     color: #7f8c8d;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+#result {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 10px;
+    padding: 30px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+#result h3 {
+    color: #155724;
+    margin-bottom: 15px;
+}
+
+#download-info {
+    margin-top: 20px;
+    text-align: left;
+}
+
+#download-info ol {
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+#download-info li {
+    margin-bottom: 8px;
+}
+
+#check-release-btn {
+    padding: 12px 25px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 15px;
 }
 
 .error {
-    background-color: #f8d7da;
+    background: #f8d7da;
     color: #721c24;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
     border: 1px solid #f5c6cb;
 }
 
-#results h2 {
-    margin-bottom: 15px;
-    color: #2c3e50;
-}
-
-.bulk-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
-
-.bulk-actions button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
-}
-
-#select-all-btn {
-    background-color: #3498db;
-    color: white;
-}
-
-#deselect-all-btn {
-    background-color: #95a5a6;
-    color: white;
-}
-
-#download-selected-btn {
-    background-color: #27ae60;
-    color: white;
-}
-
-#generate-links-btn {
-    background-color: #e67e22;
-    color: white;
-}
-
-.bulk-actions button:hover {
-    opacity: 0.9;
-}
-
-.bulk-actions button:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.stats {
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    text-align: center;
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-.repo-item {
-    padding: 15px;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background-color 0.2s;
-}
-
-.repo-item:hover {
-    background-color: #f8f9fa;
-}
-
-.repo-info {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.repo-checkbox {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.repo-details {
-    flex: 1;
-}
-
-.repo-name {
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 5px;
-    font-size: 16px;
-}
-
-.repo-description {
-    color: #7f8c8d;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-.repo-meta {
-    display: flex;
-    gap: 15px;
-    margin-top: 5px;
-    font-size: 12px;
-    color: #95a5a6;
-}
-
-.repo-meta span {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.actions {
-    display: flex;
-    gap: 10px;
-}
-
-.download-btn {
-    padding: 8px 15px;
-    background-color: #27ae60;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.3s;
-    display: inline-block;
-}
-
-.download-btn:hover {
-    background-color: #219653;
-}
-
-#links-section {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-#links-section h3 {
-    margin-bottom: 15px;
-    color: #2c3e50;
-}
-
-.download-link-item {
-    padding: 10px 15px;
-    margin-bottom: 8px;
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.download-link-item a {
-    color: #3498db;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.download-link-item a:hover {
-    text-decoration: underline;
-}
-
-.file-size {
-    color: #7f8c8d;
-    font-size: 12px;
-    font-style: italic;
-}
-
-.success-message {
-    background-color: #d4edda;
-    color: #155724;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 15px 0;
-    border: 1px solid #c3e6cb;
-    text-align: center;
-}
-
 .instructions {
-    background-color: #fff3cd;
-    color: #856404;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 15px 0;
-    border: 1px solid #ffeaa7;
+    background: #e3f2fd;
+    padding: 25px;
+    border-radius: 10px;
+    margin: 30px 0;
+}
+
+.instructions h3 {
+    color: #1976d2;
+    margin-bottom: 15px;
+}
+
+.instructions ol {
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+.instructions li {
+    margin-bottom: 8px;
+}
+
+.featured-users {
+    margin-top: 20px;
+}
+
+.featured-users h4 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.user-btn {
+    padding: 8px 15px;
+    margin: 5px;
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.user-btn:hover {
+    background: #d5dbdb;
 }
 
 footer {
-    margin-top: 30px;
     text-align: center;
+    margin-top: 40px;
     color: #7f8c8d;
-    font-size: 14px;
+}
+
+footer a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+        padding: 20px;
     }
     
     .input-section {
         flex-direction: column;
     }
     
-    .bulk-actions {
-        flex-direction: column;
-    }
-    
-    .repo-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-    
-    .repo-info {
-        width: 100%;
-    }
-    
-    .actions {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .download-link-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 5px;
+    header h1 {
+        font-size: 2em;
     }
 }
