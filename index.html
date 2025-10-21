@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Descargador de Repositorios GitHub</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         :root {
             --primary-color: #2ea44f;
@@ -126,7 +128,7 @@
             transition: all 0.3s ease;
         }
         
-        .download-btn.all {
+        .download-btn.combined {
             background: #ff6b6b;
         }
         
@@ -365,6 +367,15 @@
             color: #721c24;
         }
         
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
         @media (max-width: 768px) {
             .input-section {
                 flex-direction: column;
@@ -394,7 +405,7 @@
 <body>
     <div class="header">
         <h1>🚀 Descargador de Repositorios GitHub</h1>
-        <p class="subtitle">Descarga repositorios individualmente o todos automáticamente</p>
+        <p class="subtitle">Descarga repositorios individualmente o todos combinados en un ZIP</p>
     </div>
     
     <div class="card">
@@ -406,9 +417,12 @@
         <div class="info-box">
             <div><strong>💡 ¿Cómo funciona?</strong></div>
             <p>• <strong>Descarga Individual:</strong> Cada repositorio tiene su botón de descarga</p>
-            <p>• <strong>Descarga Múltiple:</strong> Descarga automáticamente TODOS los repositorios</p>
+            <p>• <strong>ZIP Combinado:</strong> Todos los repositorios en un solo archivo ZIP</p>
             <p>• <strong>Sin Ventanas Emergentes:</strong> Todo se descarga directamente</p>
-            <p>• <strong>Progreso en Tiempo Real:</strong> Ve el estado de cada descarga</p>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Nota importante:</strong> La descarga combinada puede tomar tiempo dependiendo del número y tamaño de los repositorios. Para muchos repositorios grandes, recomiendo la descarga individual.
         </div>
     </div>
     
@@ -424,8 +438,8 @@
             <div class="section-header">
                 <h2>📚 Repositorios Encontrados</h2>
                 <div class="download-buttons">
-                    <button class="download-btn all" id="download-all">
-                        ⬇️ Descargar Todos los Repositorios
+                    <button class="download-btn combined" id="download-combined">
+                        📦 Descargar Todo en un ZIP
                     </button>
                 </div>
             </div>
@@ -448,13 +462,14 @@
             <div id="repository-list" class="repository-list"></div>
             
             <div class="progress-section" id="progress-section">
-                <div id="progress-text">Preparando descargas...</div>
+                <div id="progress-text">Preparando descarga combinada...</div>
                 <div class="progress-bar-container">
                     <div id="progress-bar" class="progress-bar"></div>
                 </div>
                 <div id="progress-percent">0%</div>
                 
                 <div class="download-status" id="download-status" style="display: none;">
+                    <div><strong>Progreso de descarga:</strong></div>
                     <div id="status-list"></div>
                 </div>
             </div>
@@ -474,7 +489,7 @@
             const errorElement = document.getElementById('error');
             const repositoriesSection = document.getElementById('repositories-section');
             const repositoryList = document.getElementById('repository-list');
-            const downloadAllBtn = document.getElementById('download-all');
+            const downloadCombinedBtn = document.getElementById('download-combined');
             const progressSection = document.getElementById('progress-section');
             const progressBar = document.getElementById('progress-bar');
             const progressText = document.getElementById('progress-text');
@@ -487,15 +502,13 @@
             const totalStarsElement = document.getElementById('total-stars');
             
             let repositories = [];
-            let downloadQueue = [];
-            let isDownloading = false;
             
             // Event Listeners
             searchBtn.addEventListener('click', searchRepositories);
             usernameInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') searchRepositories();
             });
-            downloadAllBtn.addEventListener('click', startMultipleDownloads);
+            downloadCombinedBtn.addEventListener('click', downloadCombinedZip);
             
             async function searchRepositories() {
                 const username = usernameInput.value.trim();
@@ -635,85 +648,93 @@
                 showTemporarySuccess(`✅ Descargando: ${repo.name}`);
             }
             
-            async function startMultipleDownloads() {
-                if (repositories.length === 0 || isDownloading) return;
+            async function downloadCombinedZip() {
+                if (repositories.length === 0) return;
                 
-                isDownloading = true;
-                downloadAllBtn.disabled = true;
+                downloadCombinedBtn.disabled = true;
                 progressSection.style.display = 'block';
                 downloadStatus.style.display = 'block';
                 successMessage.style.display = 'none';
                 
-                // Preparar la cola de descargas
-                downloadQueue = repositories.map(repo => ({
-                    ...repo,
-                    status: 'pending',
-                    downloadUrl: `${repo.html_url}/archive/refs/heads/${repo.default_branch}.zip`
-                }));
+                const zip = new JSZip();
+                let downloadedCount = 0;
+                const totalRepos = repositories.length;
                 
-                updateStatusList();
-                updateProgress(0, 'Iniciando descargas múltiples...');
+                // Crear lista de estado
+                updateStatusList(repositories.map(repo => ({
+                    name: repo.name,
+                    status: 'pending'
+                })));
                 
-                // Descargar uno por uno con delay
-                for (let i = 0; i < downloadQueue.length; i++) {
-                    const repo = downloadQueue[i];
+                try {
+                    updateProgress(0, 'Iniciando descarga combinada...');
                     
-                    // Actualizar estado a "descargando"
-                    repo.status = 'downloading';
-                    updateStatusList();
-                    updateProgress((i / downloadQueue.length) * 100, `Descargando: ${repo.name}`);
-                    
-                    try {
-                        // Descargar el repositorio
-                        await downloadRepository(repo);
-                        repo.status = 'completed';
-                    } catch (error) {
-                        repo.status = 'error';
-                        console.error(`Error descargando ${repo.name}:`, error);
+                    for (let i = 0; i < repositories.length; i++) {
+                        const repo = repositories[i];
+                        
+                        // Actualizar estado
+                        updateRepoStatus(repo.name, 'downloading');
+                        updateProgress((i / totalRepos) * 80, `Descargando: ${repo.name}`);
+                        
+                        try {
+                            // Descargar el repositorio
+                            const zipUrl = `${repo.html_url}/archive/refs/heads/${repo.default_branch}.zip`;
+                            const response = await fetch(zipUrl);
+                            
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                
+                                // Agregar al ZIP principal
+                                zip.file(`${repo.name}/${repo.name}.zip`, blob);
+                                
+                                downloadedCount++;
+                                updateRepoStatus(repo.name, 'completed');
+                            } else {
+                                updateRepoStatus(repo.name, 'error');
+                            }
+                        } catch (error) {
+                            console.error(`Error descargando ${repo.name}:`, error);
+                            updateRepoStatus(repo.name, 'error');
+                        }
+                        
+                        // Pequeña pausa para no sobrecargar
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
                     
-                    updateStatusList();
+                    updateProgress(85, 'Comprimiendo archivos...');
                     
-                    // Esperar 1 segundo entre descargas para evitar bloqueos
-                    if (i < downloadQueue.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
+                    // Generar el ZIP final
+                    const content = await zip.generateAsync({ 
+                        type: 'blob',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 }
+                    }, (metadata) => {
+                        const progress = 85 + (metadata.percent / 100) * 15;
+                        updateProgress(progress, `Comprimiendo... ${Math.round(metadata.percent)}%`);
+                    });
+                    
+                    updateProgress(100, '¡Descarga completada!');
+                    
+                    // Descargar el ZIP combinado
+                    saveAs(content, `repositorios-${usernameInput.value.trim()}-combinados.zip`);
+                    
+                    showTemporarySuccess(`✅ ZIP combinado descargado! (${downloadedCount}/${totalRepos} repositorios)`);
+                    
+                } catch (error) {
+                    console.error('Error en descarga combinada:', error);
+                    showError('Error al crear el ZIP combinado: ' + error.message);
+                } finally {
+                    downloadCombinedBtn.disabled = false;
                 }
-                
-                updateProgress(100, '¡Todas las descargas completadas!');
-                showTemporarySuccess(`✅ Se han descargado ${downloadQueue.filter(r => r.status === 'completed').length} de ${downloadQueue.length} repositorios`);
-                
-                isDownloading = false;
-                downloadAllBtn.disabled = false;
             }
             
-            function downloadRepository(repo) {
-                return new Promise((resolve, reject) => {
-                    // Crear enlace de descarga invisible
-                    const a = document.createElement('a');
-                    a.href = repo.downloadUrl;
-                    a.download = `${repo.name}.zip`;
-                    a.style.display = 'none';
-                    
-                    // Evento cuando la descarga se completa
-                    a.onclick = () => {
-                        setTimeout(() => {
-                            resolve();
-                        }, 500);
-                    };
-                    
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                });
-            }
-            
-            function updateStatusList() {
+            function updateStatusList(repos) {
                 statusList.innerHTML = '';
                 
-                downloadQueue.forEach(repo => {
+                repos.forEach(repo => {
                     const statusItem = document.createElement('div');
                     statusItem.className = 'status-item';
+                    statusItem.id = `status-${repo.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
                     
                     const nameSpan = document.createElement('span');
                     nameSpan.className = 'status-name';
@@ -741,6 +762,29 @@
                     statusItem.appendChild(badge);
                     statusList.appendChild(statusItem);
                 });
+            }
+            
+            function updateRepoStatus(repoName, status) {
+                const statusItem = document.getElementById(`status-${repoName.replace(/[^a-zA-Z0-9]/g, '-')}`);
+                if (statusItem) {
+                    const badge = statusItem.querySelector('.status-badge');
+                    badge.className = `status-badge status-${status}`;
+                    
+                    switch(status) {
+                        case 'pending':
+                            badge.textContent = 'Pendiente';
+                            break;
+                        case 'downloading':
+                            badge.textContent = 'Descargando...';
+                            break;
+                        case 'completed':
+                            badge.textContent = 'Completado ✅';
+                            break;
+                        case 'error':
+                            badge.textContent = 'Error ❌';
+                            break;
+                    }
+                }
             }
             
             function updateProgress(percent, text) {
